@@ -1,0 +1,12 @@
+image: node:latest
+
+before_script:
+  - apt update -y
+  - apt upgrade -y
+  - apt install npm -y
+  - npm install -g yarn --force
+  - yarn install
+
+yarn:
+  script:
+    - yarn generate
