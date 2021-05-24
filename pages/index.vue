@@ -4,37 +4,41 @@
     <div v-if='error' class='text-red-600'>
       {{ error }}
     </div>
-    <div v-else>
-      <div v-if='queue_error' class='text-red-600'>
-        {{ queue_error }}
-      </div>
-      <div v-else>
-        <div v-if='matched && matched_go'>
-          <div v-if='matched.status === "accepted"'>
-            <h1>Match found!</h1>
-            <h1>{{ Math.max(0, Math.min(30, matched_countdown)) }} seconds until cancel</h1>
-            <h1>Waiting for opponent to accept...</h1>
-          </div>
-          <div v-else-if='matched.status === "pending"'>
-            <h1>Match found!</h1>
-            <h1>{{ Math.max(0, Math.min(30, matched_countdown)) }} seconds to accept</h1>
-            <div v-if='match_error' class='text-red-600'>
-              {{ match_error }}
-            </div>
-            <div v-else>
-              <button @click='acceptMatch()'>Accept</button>
-            </div>
+    <div v-else-if='show'>
+      <h1>Elo: {{ elo }} {{ wins < 10 ? "(provisional until " + (10 - wins).toString() + " more win" + ((10 - wins) === 1 ? ")" : "s)") : "" }}</h1>
+      <div v-if='matched'>
+        <div v-if='matched.status === "accepted"'>
+          <h1>Match found!</h1>
+          <h1>{{ Math.max(0, Math.min(30, matched_countdown)) }} seconds until cancel</h1>
+          <h1>Waiting for opponent to accept...</h1>
+        </div>
+        <div v-else-if='matched.status === "pending"'>
+          <h1>Match found!</h1>
+          <h1>{{ Math.max(0, Math.min(30, matched_countdown)) }} seconds to accept</h1>
+          <div v-if='match_error' class='text-red-600'>
+            {{ match_error }}
           </div>
           <div v-else>
-            <h1>Match in progress</h1>
-            <NuxtLink :to='"/match/" + matched.match_id'>Enter</NuxtLink>
+            <button @click='acceptMatch()'>Accept</button>
           </div>
         </div>
-        <div v-else-if='queued === true'>
-          <button @click='leaveQueue("chess")'>Finding opponents...</button>
+        <div v-else>
+          <h1>Match in progress</h1>
+          <NuxtLink :to='"/match/" + matched.match_id'>Enter</NuxtLink>
         </div>
-        <div v-else-if='queued === false'>
-          <button @click='joinQueue("chess")'>Play chess</button>
+      </div>
+      <div v-else>
+        <div v-if='queue_error' class='text-red-600'>
+          {{ queue_error }}
+        </div>
+        <div v-else>
+          <div v-if='queued === true'>
+            <button @click='leaveQueue("chess")'>Finding opponents...</button>
+          </div>
+          <div v-else-if='queued === false'>
+            <!-- TODO: have a dummy play chess button that only activates if conditions are met here -->
+            <button @click='joinQueue("chess")'>Play chess</button>
+          </div>
         </div>
       </div>
     </div>
@@ -44,23 +48,31 @@
 <script>
 import { Socket } from 'phoenix/assets/js/phoenix.js';
 import { server } from '@/server';
+import { codes } from '@/codes';
 
 export default {
   data() {
     return {
       closed: false, // everything will shut down when this is true
       closed_ack: false,
+      closed_ack_accepting_match: false,
       socket: null,
       queue: null,
       matches: null,
       match: null,
+      time: null,
       queue_cbq: [],
       matches_cbq: [],
       match_cbq: [],
       joined_queue: false, // state grabber will only run when this and below are true
       joined_matches: false,
-      joined_match: false,
+      joined_match: false, // important! match does not grab state, it is from matches
+      joined_time: false,
+      queue_got_state: false,
+      matches_got_state: false,
+      time_got_state: false,
       got_state: false, // .on callbacks will only run in the queue when this is true
+      grabbing_state: false,
       queue_idx: null,
       matches_idx: null,
       match_idx: null,
@@ -69,11 +81,17 @@ export default {
       matched_go: false,
       matched_countdown: null,
       matches_result: [],
+      elo: null,
+      wins: null,
       sending_clear: false,
+      retry_clear: false,
+      time_offset: null,
+      time_offsets: [],
       error: '',
       error_pending: false,
       queue_error: '',
       match_error: '',
+      show: false,
     }
   },
   async created() {
@@ -86,7 +104,13 @@ export default {
       this.joined_queue = false;
       this.joined_matches = false;
       this.joined_match = false;
+      this.joined_time = false;
       this.got_state = false;
+      this.grabbing_state = false;
+      this.queue_got_state = false;
+      this.matches_got_state = false;
+      this.time_got_state = false;
+      this.time_offsets = [];
       if (this.match) {
         this.match.leave()
         delete this.match;
@@ -95,6 +119,7 @@ export default {
       await new Promise(r => setTimeout(r, 3600))
       if (this.error_pending) {
         this.error = "network error";
+        this.matched_go = false;
       }
     })
     this.socket.connect()
@@ -128,6 +153,7 @@ export default {
         fn: async (match) => {
           this.queued = false;
           this.matched = match;
+          this.match_idx = match.idx;
           this.match = this.socket.channel('match:' + this.matched.match_id)
           await this.setupMatchCbs();
           this.match.join()
@@ -143,7 +169,6 @@ export default {
                 await this.showError("something went wrong")
               }
             })
-          await this.getMatchState();
         }
       })
     })
@@ -180,10 +205,43 @@ export default {
         }
       })
     })
+    this.matches.on('match_closed', async (msg) => {
+      console.log('match closed', msg)
+      this.matches_cbq.push({
+        idx: msg.idx,
+        arg: msg.match_id,
+        fn: async (match_id) => {
+          // TODO insert to beginning of matches_result
+          if (this.matched.match_id === match_id) {
+            this.matched = false;
+            if (this.match) {
+              this.match.leave()
+              delete this.match
+            }
+            this.match = null;
+          }
+        }
+      })
+    })
     this.matches.join()
       .receive('ok', async (msg) => {
         console.log('joined matches:' + this.$auth.user.user_id)
         this.joined_matches = true;
+      })
+      .receive('error', async (msg) => {
+        try {
+          console.log('error', msg)
+          await this.showError(msg.reason)
+        } catch {
+          await this.showError("something went wrong")
+        }
+      })
+
+    this.time = this.socket.channel('time:lobby')
+    this.time.join()
+      .receive('ok', async (msg) => {
+        console.log('joined time:lobby')
+        this.joined_time = true;
       })
       .receive('error', async (msg) => {
         try {
@@ -214,54 +272,53 @@ export default {
           await cb.fn(cb.arg)
         }
       }
-      if (this.matched && !this.sending_clear) {
-        // TODO: waste of computational power
-        let prev = Date.parse(this.matched.inserted_at);
-        let cur = Date.parse((new Date()).toString());
-        let diff = Math.floor((cur - prev) / 1000)
-        this.matched_countdown = 30 - diff;
-        if (diff >= 30 && (this.matched.status === "pending" || this.matched.status === "accepted")) {
-          // send claim to clear match
-          this.sending_clear = true;
-          this.match.push('clear_match', { token: this.$auth.strategy.token.get() })
-            .receive('ok', (msg) => {
-              // console.log('ok', msg)
-            })
-            .receive('error', async (msg) => {
-              try {
-                if (
-                  msg.reason === "CHESS_ENABLED_INTERNAL_TRANSFER_CLEAR_MATCH_NOT_MEMBER+24e50024-590f-4446-abd9-4fbe37d8b961" ||
-                  msg.reason === "CHESS_ENABLED_INTERNAL_TRANSFER_CLEAR_MATCH_MOVED_TO_WAGERING+69b586e8-68d1-4d7d-ace7-0904cee09414"
-                ) {
-                  // noop
-                } else if (
-                  msg.reason === "CHESS_ENABLED_INTERNAL_TRANSFER_CLEAR_MATCH_TOO_EARLY+332e403b-f718-43d4-ab0e-7a388edd74cb"
-                ) {
-                  // retry
-                  console.log('retrying clear_match...')
-                  this.sending_clear = false;
-                } else {
-                  console.log('error', msg)
-                  await this.showError(msg.reason)
+      if (this.matched && (!this.sending_clear || this.retry_clear)) {
+        if (this.matched.status === "pending" || this.matched.status === "accepted") {
+          let prev = Date.parse(this.matched.inserted_at);
+          let cur = Date.parse((new Date()).toString()) + this.time_offset;
+          let diff = Math.floor((cur - prev) / 1000)
+          this.matched_countdown = 30 - diff;
+          if (this.got_state && diff >= 30) {
+            // send claim to clear match
+            this.sending_clear = true;
+            this.retry_clear = false;
+            this.match.push('clear_match', { token: this.$auth.strategy.token.get() })
+              .receive('ok', (msg) => {
+                // console.log('ok', msg)
+              })
+              .receive('error', async (msg) => {
+                try {
+                  if (
+                    msg.reason === codes.nonexistent ||
+                    msg.reason === codes.moved_on
+                  ) {
+                    // noop
+                  } else if (
+                    msg.reason === codes.too_early
+                  ) {
+                    // retry
+                    console.log('retrying clear_match...')
+                    this.retry_clear = true;
+                  } else {
+                    console.log('error', msg)
+                    await this.showError(msg.reason)
+                  }
+                } catch {
+                  await this.showError("something went wrong")
                 }
-              } catch {
-                await this.showError("something went wrong")
-              }
-            })
-        } else {
-          this.matched_go = true;
+              })
+          }
         }
-      } else {
-        // this.matched_go = true;
+        this.matched_go = true;
       }
-      if (this.joined_queue && this.joined_matches && !this.got_state) {
-        this.error = "";
-        this.error_pending = false;
+      if (this.joined_queue && this.joined_matches && this.joined_time && !this.got_state && !this.grabbing_state) {
+        this.grabbing_state = true;
         this.queue.push("list_queued")
           .receive('ok', async (msg) => {
             console.log('got queued', msg)
             this.queued = !!msg.queued.length
             this.queue_idx = msg.idx
+            this.queue_got_state = true;
           })
           .receive('error', async (msg) => {
             try {
@@ -274,8 +331,11 @@ export default {
         this.matches.push("list_matches")
           .receive('ok', async (msg) => {
             console.log('got matches', msg)
-            if (msg.matches.length && !msg.matches[0].closed) {
-              this.matched = msg.matches[0];
+            this.elo = msg.matches.elo;
+            this.wins = msg.matches.wins;
+            if (msg.matches.list.length && !msg.matches.list[0].closed) {
+              this.matched = msg.matches.list[0];
+              this.match_idx = msg.matches.list[0].idx;
               this.match = this.socket.channel('match:' + this.matched.match_id)
               await this.setupMatchCbs();
               this.match.join()
@@ -291,11 +351,14 @@ export default {
                     await this.showError("something went wrong")
                   }
                 })
-              await this.getMatchState();
+            } else {
+              this.matched = false;
             }
-            this.matches_result = msg.matches;
+            // TODO rename to something nicer (matches_list ??)
+            this.matches_result = msg.matches.list;
             this.matches_result.shift();
             this.matches_idx = msg.idx
+            this.matches_got_state = true;
           })
           .receive('error', async (msg) => {
             try {
@@ -305,7 +368,38 @@ export default {
               await this.showError("something went wrong")
             }
           })
+        for (let i = 0; i < 3; i++) {
+          this.time.push('cur_time')
+            .receive('ok', async (msg) => {
+              let local_cur = Date.parse((new Date()).toString())
+              let server_cur = Date.parse(msg.timestamp)
+              this.time_offsets.push(server_cur - local_cur);
+              if (this.time_offsets.length >= 3) {
+                this.time_offsets.sort((n1, n2) => {
+                  return n1 - n2;
+                })
+                console.log(this.time_offsets)
+                this.time_offset = this.time_offsets[Math.ceil(this.time_offsets.length / 2)]
+                console.log('time offset median ' + this.time_offset)
+                this.time_got_state = true;
+              }
+            })
+            .receive('error', async (msg) => {
+              try {
+                console.log('error', msg)
+                await this.showError(msg.reason)
+              } catch {
+                await this.showError("something went wrong")
+              }
+            })
+        }
+      }
+      if (this.queue_got_state && this.matches_got_state && this.time_got_state) {
+        this.error = "";
+        this.error_pending = false;
         this.got_state = true;
+        this.grabbing_state = false;
+        this.show = true; // only set to true once and that's it, never changed again
       }
       await new Promise(r => setTimeout(r, 0))
     }
@@ -350,31 +444,17 @@ export default {
           }
         })
       })
-      this.match.on('match_wagering', (msg) => {
-        console.log('match wagering', msg)
+      this.match.on('match_open', (msg) => {
+        console.log('match open', msg)
         this.match_cbq.push({
           idx: msg.idx,
           arg: null,
           fn: async (_) => {
-            this.matched.status = "wagering";
+            // this.matched.status = "open";
             await this.$router.push("/match/" + this.matched.match_id)
           }
         })
       })
-    },
-    async getMatchState() {
-      this.match.push('get_match')
-        .receive('ok', async (msg) => {
-          this.match_idx = msg.idx;
-        })
-        .receive('error', async (msg) => {
-          try {
-            console.log('error', msg)
-            await this.showError(msg.reason)
-          } catch {
-            await this.showError("something went wrong")
-          }
-        })
     },
     async joinQueue(type) {
       this.queue.push('join_queue', { type: type })
@@ -405,23 +485,32 @@ export default {
         })
     },
     async acceptMatch() {
-      this.match.push('accept_match', { token: this.$auth.strategy.token.get() })
-        .receive('ok', (msg) => {
-          // console.log('ok', msg)
-        })
-        .receive('error', async (msg) => {
-          try {
-            console.log('error', msg)
-            await this.showMatchError(msg.reason)
-          } catch {
-            await this.showMatchError('accepting match failed')
-          }
-        })
+      this.accepting_match = true;
+      this.closed_ack_accepting_match = false;
+      while (!this.got_state && !this.closed) {
+        await new Promise(r => setTimeout(r, 0))
+      }
+      this.closed_ack_accepting_match = true;
+      this.accepting_match = false;
+      if (this.match) {
+        this.match.push('accept_match', { token: this.$auth.strategy.token.get() })
+          .receive('ok', (msg) => {
+            // console.log('ok', msg)
+          })
+          .receive('error', async (msg) => {
+            try {
+              console.log('error', msg)
+              await this.showMatchError(msg.reason)
+            } catch {
+              await this.showMatchError('accepting match failed')
+            }
+          })
+      }
     },
   },
   async beforeDestroy() {
     this.closed = true;
-    while (!this.closed_ack) {
+    while (!this.closed_ack || (this.accepting_match && !this.closed_ack_accepting_match)) {
       await new Promise(r => setTimeout(r, 0))
     }
     if (this.queue) {
@@ -436,6 +525,10 @@ export default {
       this.match.leave();
       delete this.match;
     }
+    if (this.time) {
+      this.time.leave();
+      delete this.time;
+    }
     if (this.socket) {
       this.socket.disconnect();
       delete this.socket;
@@ -444,6 +537,9 @@ export default {
     this.queue = null;
     this.matches = null;
     this.match = null;
+    this.time = null;
+    this.time_offsets = [];
+    console.log('destroyed')
   }
 }
 </script>
