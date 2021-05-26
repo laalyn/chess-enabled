@@ -5,6 +5,7 @@
       {{ error }}
     </div>
     <div v-else-if='show'>
+      <!-- TODO have this dynamically change -->
       <h1>Elo: {{ elo }} {{ wins < 10 ? "(provisional until " + (10 - wins).toString() + " more win" + ((10 - wins) === 1 ? ")" : "s)") : "" }}</h1>
       <div v-if='matched'>
         <div v-if='matched.status === "accepted"'>

@@ -68,8 +68,8 @@ export default {
           property: '',
         },
         endpoints: {
-          login: { url: 'http://localhost:6369/api/users/login', method: 'post' },
-          user: { url: 'http://localhost:6369/api/user', method: 'get' },
+          login: { url: 'https://d3ryjut3q7flbd.cloudfront.net/api/users/login', method: 'post' },
+          user: { url: 'https://d3ryjut3q7flbd.cloudfront.net/api/user', method: 'get' },
         },
       },
     },
