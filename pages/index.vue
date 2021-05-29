@@ -204,22 +204,23 @@ export default {
         let pld = JSON.parse(commandData.command.split("=>")[1])
         switch (cmd) {
           case ":queue_chess": {
-            this.joinQueue("chess");
             this.alan_open = true;
+            this.joinQueue("chess");
           break }
 
           case ":unqueue_chess": {
-            this.leaveQueue("chess");
             this.alan_open = true;
+            this.leaveQueue("chess");
           break }
 
           case ":accept_match": {
             if (!this.matched) {
+              this.alan_lock = false;
               this.hotSpeak("there is no match to accept")
               return;
             }
-            this.acceptMatch()
             this.alan_open = true;
+            this.acceptMatch()
           break }
         }
       },
@@ -602,6 +603,7 @@ export default {
       delete this.socket;
     }
     if (this.alan) {
+      // TODO wait until alan connection status update
       this.alan.remove();
       delete this.alan;
     }

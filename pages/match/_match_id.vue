@@ -375,23 +375,30 @@ export default {
             this.submitted_val = '';
             // do not allow not-turn
             if (!this.running) {
+              this.alan_lock = false;
               this.hotSpeak("it is not your turn")
               return;
             }
             if (JSON.stringify(pld.from) === JSON.stringify(pld.to)) {
+              this.alan_lock = false;
               this.hotSpeak("you cannot move to yourself")
               return;
             }
+            this.alan_open = true;
             let x = pld.from.letter.charCodeAt(0) - 65 + 1;
             let y = pld.from.number
             y = 8 - y + 1;
+            if (this.board[y - 1][x - 1].type.split("_")[0] !== this.color) {
+              this.alan_lock = false;
+              this.hotSpeak("this isn't your piece")
+              return;
+            }
             this.action(y - 1, x - 1, true)
             x = pld.to.letter.charCodeAt(0) - 65 + 1;
             y = pld.to.number
             y = 8 - y + 1;
             this.action(y - 1, x - 1, true)
             this.alan_lock = false;
-            this.alan_open = true;
           break }
 
           case ":fuzzy_move_add": {
