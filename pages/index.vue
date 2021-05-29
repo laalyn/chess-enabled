@@ -50,6 +50,7 @@
 import { Socket } from 'phoenix/assets/js/phoenix.js';
 import { server } from '@/server';
 import { codes } from '@/codes';
+import alanBtn from '@alan-ai/alan-sdk-web';
 
 export default {
   data() {
@@ -93,6 +94,8 @@ export default {
       queue_error: '',
       match_error: '',
       show: false,
+      alan: null,
+      alan_open: false,
     }
   },
   async created() {
@@ -187,6 +190,41 @@ export default {
         }
       })
 
+    console.log(" === opening alan === ")
+    if (this.alan) {
+      this.alan.remove()
+      delete this.alan;
+    }
+    this.alan = null;
+    this.alan = alanBtn({
+      key: 'a04d8b623a187cea81301b0f1d4563cb2e956eca572e1d8b807a3e2338fdd0dc/stage',
+      onCommand: (commandData) => {
+        let cmd = commandData.command.split("=>")[0].trim()
+        console.log(commandData.command)
+        let pld = JSON.parse(commandData.command.split("=>")[1])
+        switch (cmd) {
+          case ":queue_chess": {
+            this.joinQueue("chess");
+            this.alan_open = true;
+          break }
+
+          case ":unqueue_chess": {
+            this.leaveQueue("chess");
+            this.alan_open = true;
+          break }
+
+          case ":accept_match": {
+            if (!this.matched) {
+              this.hotSpeak("there is no match to accept")
+              return;
+            }
+            this.acceptMatch()
+            this.alan_open = true;
+          break }
+        }
+      },
+    });
+
     this.matches = this.socket.channel('matches:' + this.$auth.user.user_id, { token: this.$auth.strategy.token.get() })
     this.matches.on('match_cleared', async (msg) => {
       console.log('match cleared', msg)
@@ -210,10 +248,11 @@ export default {
       console.log('match closed', msg)
       this.matches_cbq.push({
         idx: msg.idx,
-        arg: msg.match_id,
-        fn: async (match_id) => {
+        arg: msg.match,
+        fn: async (match) => {
           // TODO insert to beginning of matches_result
-          if (this.matched.match_id === match_id) {
+          if (this.matched.match_id === match.match_id) {
+            this.elo += match.elo_delta;
             this.matched = false;
             if (this.match) {
               this.match.leave()
@@ -432,6 +471,13 @@ export default {
       await new Promise(r => setTimeout(r, 1800));
       this.match_error = '';
     },
+    async hotSpeak(message) {
+      this.alan.callProjectApi("hotSpeak", { message: message }, (error, result) => {
+        if (error) {
+          console.log('error', error)
+        }
+      })
+    },
     async setupMatchCbs() {
       this.match.on('match_accepted', (msg) => {
         console.log('match accepted', msg)
@@ -461,11 +507,18 @@ export default {
       this.queue.push('join_queue', { type: type })
         .receive('ok', (msg) => {
           // console.log('ok', msg)
+          this.alan_open = false;
         })
         .receive('error', async (msg) => {
           try {
             console.log('error', msg)
-            await this.showQueueError(msg.reason)
+            let p1 = this.showQueueError(msg.reason)
+            if (this.alan_open) {
+              await Promise.all([p1, this.hotSpeak(msg.reason)])
+            } else {
+              await p1;
+            }
+            this.alan_open = false;
           } catch {
             await this.showQueueError('queueing failed')
           }
@@ -475,11 +528,18 @@ export default {
       this.queue.push('leave_queue', { type: type })
         .receive('ok', (msg) => {
           // console.log('ok', msg)
+          this.alan_open = false;
         })
         .receive('error', async (msg) => {
           try {
             console.log('error', msg)
-            await this.showQueueError(msg.reason)
+            let p1 = this.showQueueError(msg.reason)
+            if (this.alan_open) {
+              await Promise.all([p1, this.hotSpeak(msg.reason)])
+            } else {
+              await p1;
+            }
+            this.alan_open = false;
           } catch {
             await this.showQueueError('unqueueing failed')
           }
@@ -497,11 +557,18 @@ export default {
         this.match.push('accept_match', { token: this.$auth.strategy.token.get() })
           .receive('ok', (msg) => {
             // console.log('ok', msg)
+            this.alan_open = false;
           })
           .receive('error', async (msg) => {
             try {
               console.log('error', msg)
-              await this.showMatchError(msg.reason)
+              let p1 = this.showMatchError(msg.reason)
+              if (this.alan_open) {
+                await Promise.all([p1, this.hotSpeak(msg.reason)])
+              } else {
+                await p1;
+              }
+              this.alan_open = false;
             } catch {
               await this.showMatchError('accepting match failed')
             }
@@ -534,6 +601,11 @@ export default {
       this.socket.disconnect();
       delete this.socket;
     }
+    if (this.alan) {
+      this.alan.remove();
+      delete this.alan;
+    }
+    this.alan = null;
     this.socket = null;
     this.queue = null;
     this.matches = null;
