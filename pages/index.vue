@@ -240,13 +240,20 @@ export default {
 
           case ":accept_match": {
             if (!this.matched) {
-              this.alan_lock = false;
               this.hotSpeak("there is no match to accept")
               return;
             }
             this.alan_open = true;
             this.acceptMatch()
           break }
+
+          case ":enter_match": {
+            if (!this.matched) {
+              this.hotSpeak("there is no match to enter")
+              return;
+            }
+            this.$router.push("/match/" + this.matched.match_id)
+          }
         }
       },
       rootEl: document.getElementById('alan-btn'),
