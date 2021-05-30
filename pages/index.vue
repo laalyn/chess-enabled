@@ -1,48 +1,72 @@
 <template>
-  <div>
-    <NuxtLink to='profile'>Profile</NuxtLink>
-    <div v-if='error' class='text-red-600'>
+  <div class='absolute left-1/2 transform -translate-x-1/2 h-full' style='width: min(100%, calc(80px * 8 + 26px));'>
+    <div class='absolute right-0'>
+      <i class="fas fa-sign-out-alt cursor-pointer hover:text-red-600 transition-colors delay-75 duration-300 ease-in-out" @click='logout()' style='font-size: 1.5rem; margin-top: 0.5rem; margin-right: 0.6rem'></i>
+    </div>
+    <div v-if='error' class='text-red-600 relative' style='top: 1.7rem; left: 0.2rem'>
       {{ error }}
     </div>
-    <div v-else-if='show'>
-      <!-- TODO have this dynamically change -->
-      <h1>Elo: {{ elo }} {{ wins < 10 ? "(provisional until " + (10 - wins).toString() + " more win" + ((10 - wins) === 1 ? ")" : "s)") : "" }}</h1>
+    <div v-else-if='show' class='relative' style='top: 1.7rem'>
+      <h1 class='text-3xl' style='margin-left: 0.9rem'>Welcome to Chess Enabled</h1>
+      <div class='inline-block bg-yellow-500' style='margin-left: 1rem; margin-top: 1rem; padding: 0.8rem 1rem; border-radius: 0.6rem'>
+        <i class="fas fa-trophy inline-block" style='font-size: 2rem'></i>
+        <h1 class='text-3xl inline-block'>{{ elo }}</h1>
+        <p class='text-lg inline-block' style='transform: translateY(-0.1rem)'>{{ wins < 10 ? "Elo" : "Elo" }}</p>
+      </div>
+      <div class='inline-block bg-blue-500' style='margin: 0 1rem; margin-top: 1rem; padding: 0.8rem 1rem; border-radius: 0.6rem'>
+        <i class="fas fa-star inline-block" style='font-size: 2rem'></i>
+        <h1 class='text-3xl inline-block'>{{ wins }}</h1>
+        <p class='text-lg inline-block' style='transform: translateY(-0.1rem)'>Win{{ (10 - wins) === 1 ? "" : "s" }}</p>
+      </div>
       <div v-if='matched'>
-        <div v-if='matched.status === "accepted"'>
-          <h1>Match found!</h1>
-          <h1>{{ Math.max(0, Math.min(30, matched_countdown)) }} seconds until cancel</h1>
-          <h1>Waiting for opponent to accept...</h1>
-        </div>
-        <div v-else-if='matched.status === "pending"'>
-          <h1>Match found!</h1>
-          <h1>{{ Math.max(0, Math.min(30, matched_countdown)) }} seconds to accept</h1>
-          <div v-if='match_error' class='text-red-600'>
-            {{ match_error }}
-          </div>
-          <div v-else>
-            <button @click='acceptMatch()'>Accept</button>
-          </div>
+        <div v-if='match_error' class='text-red-600' style='margin-top: 1.1rem; margin-left: 1.5rem'>
+          {{ match_error }}
         </div>
         <div v-else>
-          <h1>Match in progress</h1>
-          <NuxtLink :to='"/match/" + matched.match_id'>Enter</NuxtLink>
+          <div v-if='matched.status === "accepted"'>
+            <div class='inline-block bg-indigo-400 hover:bg-indigo-400 transition-colors delay-75 duration-300 ease-in-out' style='margin-left: 1.5rem; margin-top: 1.1rem; padding: 0.6rem 1rem; border-radius: 0.4rem'>
+              <i class='fas fa-hourglass inline-block' style='font-size: 1.1rem'></i>
+              <h1 class='text-lg inline-block'>Waiting ({{ Math.max(0, Math.min(30, matched_countdown)) }} seconds)</h1>
+            </div>
+          </div>
+          <div v-else-if='matched.status === "pending"'>
+            <div @click='acceptMatch()' class='inline-block cursor-pointer bg-yellow-400 hover:bg-yellow-500 transition-colors delay-75 duration-300 ease-in-out' style='margin-left: 1.5rem; margin-top: 1.1rem; padding: 0.6rem 1rem; border-radius: 0.4rem'>
+              <i class='fas fa-exclamation inline-block' style='font-size: 1.1rem'></i>
+              <h1 class='text-lg inline-block'>Accept ({{ Math.max(0, Math.min(30, matched_countdown)) }} seconds)</h1>
+            </div>
+          </div>
+          <div v-else>
+            <div @click='$router.push("/match/" + matched.match_id)' class='inline-block cursor-pointer bg-purple-400 hover:bg-purple-500 transition-colors delay-75 duration-300 ease-in-out' style='margin-left: 1.5rem; margin-top: 1.1rem; padding: 0.6rem 1rem; border-radius: 0.4rem'>
+              <NuxtLink :to='"/match/" + matched.match_id'>
+                <i class='fas fa-door-open inline-block' style='font-size: 1.1rem'></i>
+                <h1 class='text-lg inline-block'>Enter match</h1>
+              </NuxtLink>
+            </div>
+          </div>
         </div>
       </div>
       <div v-else>
-        <div v-if='queue_error' class='text-red-600'>
+        <div v-if='queue_error' class='text-red-600' style='margin-top: 1.1rem; margin-left: 1.5rem'>
           {{ queue_error }}
         </div>
         <div v-else>
           <div v-if='queued === true'>
-            <button @click='leaveQueue("chess")'>Finding opponents...</button>
+            <div @click='leaveQueue("chess")' class='inline-block cursor-pointer bg-red-500 hover:bg-red-600 transition-colors delay-75 duration-300 ease-in-out' style='margin-left: 1.5rem; margin-top: 1.1rem; padding: 0.6rem 1rem; border-radius: 0.4rem'>
+              <i class='fas fa-clock inline-block' style='font-size: 1.1rem'></i>
+              <h1 class='text-lg inline-block'>Finding opponents</h1>
+            </div>
           </div>
           <div v-else-if='queued === false'>
-            <!-- TODO: have a dummy play chess button that only activates if conditions are met here -->
-            <button @click='joinQueue("chess")'>Play chess</button>
+            <div @click='joinQueue("chess")' class='inline-block cursor-pointer bg-green-400 hover:bg-green-500 transition-colors delay-75 duration-300 ease-in-out' style='margin-left: 1.5rem; margin-top: 1.1rem; padding: 0.6rem 1rem; border-radius: 0.4rem'>
+              <i class='fas fa-play inline-block' style='font-size: 1.1rem'></i>
+              <h1 class='text-lg inline-block'>Play chess</h1>
+            </div>
           </div>
         </div>
       </div>
     </div>
+
+    <div class='alan-btn'></div>
   </div>
 </template>
 
@@ -120,6 +144,7 @@ export default {
         delete this.match;
       }
       this.match = null;
+      this.alan_open = false;
       await new Promise(r => setTimeout(r, 3600))
       if (this.error_pending) {
         this.error = "network error";
@@ -224,6 +249,7 @@ export default {
           break }
         }
       },
+      rootEl: document.getElementById('alan-btn'),
     });
 
     this.matches = this.socket.channel('matches:' + this.$auth.user.user_id, { token: this.$auth.strategy.token.get() })
@@ -254,6 +280,9 @@ export default {
           // TODO insert to beginning of matches_result
           if (this.matched.match_id === match.match_id) {
             this.elo += match.elo_delta;
+            if (match.status === "won") {
+              this.wins++;
+            }
             this.matched = false;
             if (this.match) {
               this.match.leave()
@@ -576,6 +605,10 @@ export default {
           })
       }
     },
+    async logout() {
+      await this.$auth.logout()
+      await this.$router.push('/logged-out')
+    },
   },
   async beforeDestroy() {
     this.closed = true;
@@ -603,7 +636,9 @@ export default {
       delete this.socket;
     }
     if (this.alan) {
-      // TODO wait until alan connection status update
+      // TODO wait until alan connection status update ???
+      this.alan.deactivate()
+      this.alan.stop();
       this.alan.remove();
       delete this.alan;
     }

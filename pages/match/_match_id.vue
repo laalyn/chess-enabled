@@ -1,45 +1,51 @@
-<!-- TODO selected as another image -->
 <!-- TODO drag&drop mode mode -->
+<!-- TODO don't use string splitting, but check id -->
 
 <template>
   <div class="absolute left-1/2 transform -translate-x-1/2 h-full" style='width: min(100%, calc(80px * 8 + 26px));'>
-    <NuxtLink to='/'>Back</NuxtLink>
+    <NuxtLink to='/'><i class="fas fa-long-arrow-alt-left cursor-pointer hover:text-blue-500 transition-colors delay-75 duration-300 ease-in-out" style='font-size: 1.4rem; margin-top: 0.8rem; margin-left: 0.6rem'></i></NuxtLink>
+    <h1 class='absolute top-0 text-2xl left-1/2 transform -translate-x-1/2' style='margin-top: 0.4rem'>Chess match</h1>
     <div v-if='error' class='text-red-600'>
       {{ error }}
     </div>
-    <div v-else-if='show'>
+    <div v-else-if='show' class='relative' style='margin-top: 0.2rem'>
       <!-- OVERLAY -->
-      <div v-if='match_closed'>
-        <h1>THE MATCH IS CLOSED. You {{ won ? (won === "tied" ? "tied with the opponent." : "won!") : "lost." }}</h1>
-        <NuxtLink :to='"/summary/" + match_id'>View summary</NuxtLink>
+      <div v-if='match_closed' class='absolute bg-white left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10' style='padding: 0.8rem 1.2rem; border-radius: 0.6rem; box-shadow: 0 0 0.9rem rgba(0, 0, 0, 0.5);'>
+        <h1 class='text-3xl'>You {{ won ? (won === "tied" ? "tied." : "won!") : "lost." }}</h1>
+        <div @click='$router.push("/")' class='inline-block cursor-pointer bg-blue-400 hover:bg-blue-500 transition-colors delay-75 duration-300 ease-in-out' style='margin-top: 0.8rem; padding: 0.6rem 1rem; border-radius: 0.4rem'>
+          <NuxtLink to='/'>
+            <i class='fas fa-door-closed inline-block' style='font-size: 1.1rem'></i>
+            <h1 class='text-lg inline-block'>Back home</h1>
+          </NuxtLink>
+        </div>
       </div>
       <!-- OVERLAY fin-->
 
       <!-- OPPONENT'S BAR -->
       <div v-if='running'>
-        <div style='padding: 0 0'>
+        <div class=' transition delay-75 duration-300 ease-in-out' style='padding: 0 0'>
           <div class='inline-block border-2' style='padding: 0.2rem 0.4rem; border-radius: 0.4rem;'>
-            <h1 class='text-black'>{{ Math.max(0, Math.min(Math.floor(opponent_time_left / 60), 10)) }}:{{ (Math.floor(opponent_time_left / 60) >= 10 ? 0 : Math.max(0, opponent_time_left % 60)).toString().padStart(2, '0') }}</h1>
+            <h1 class='text-black text-lg'>{{ Math.max(0, Math.min(Math.floor(opponent_time_left / 60), 15)) }}:{{ (Math.floor(opponent_time_left / 60) >= 15 ? 0 : Math.max(0, opponent_time_left % 60)).toString().padStart(2, '0') }}</h1>
           </div>
-          <div class='w-full' style='height: 0.4rem; border-width: 1px; margin-top: 0.4rem; margin-bottom: 0.4rem'>
+          <div class='w-full border-2' style='height: 0.4rem; margin-top: 0.4rem; margin-bottom: 0.4rem; border-radius: 0.2rem'>
           </div>
         </div>
       </div>
       <div v-else>
         <div v-if='color !== "white"'>
-          <div style='padding: 0 0.1rem'>
+          <div class=' transition delay-75 duration-300 ease-in-out' style='padding: 0 0.1rem'>
             <div class='inline-block border-2' style='padding: 0.2rem 0.4rem; border-radius: 0.4rem; box-shadow: 0 0 0.3rem black; border-color: white'>
-              <h1 class=''>{{ Math.max(0, Math.min(Math.floor(opponent_time_left / 60), 10)) }}:{{ (Math.floor(opponent_time_left / 60) >= 10 ? 0 : Math.max(0, opponent_time_left % 60)).toString().padStart(2, '0') }}</h1>
+              <h1 class='text-lg'>{{ Math.max(0, Math.min(Math.floor(opponent_time_left / 60), 15)) }}:{{ (Math.floor(opponent_time_left / 60) >= 15 ? 0 : Math.max(0, opponent_time_left % 60)).toString().padStart(2, '0') }}</h1>
             </div>
-            <div class='w-full' style='height: 0.4rem; box-shadow: 0 0 0.3rem black; margin-top: 0.4rem; margin-bottom: 0.4rem'>
+            <div class='w-full' style='height: 0.4rem; box-shadow: 0 0 0.3rem black; margin-top: 0.4rem; margin-bottom: 0.4rem; border-radius: 0.2rem'>
             </div>
           </div>
         </div>
-        <div v-else>
+        <div v-else class=' transition delay-75 duration-300 ease-in-out'>
           <div class='inline-block border-2' style='padding: 0.2rem 0.4rem; border-radius: 0.4rem; background-color: dimgray; border-color: white'>
-            <h1 class='text-gray-200'>{{ Math.max(0, Math.min(Math.floor(opponent_time_left / 60), 10)) }}:{{ (Math.floor(opponent_time_left / 60) >= 10 ? 0 : Math.max(0, opponent_time_left % 60)).toString().padStart(2, '0') }}</h1>
+            <h1 class='text-gray-200 text-lg'>{{ Math.max(0, Math.min(Math.floor(opponent_time_left / 60), 15)) }}:{{ (Math.floor(opponent_time_left / 60) >= 15 ? 0 : Math.max(0, opponent_time_left % 60)).toString().padStart(2, '0') }}</h1>
           </div>
-          <div class='w-full' style='height: 0.4rem; background-color: dimgray; margin-top: 0.4rem; margin-bottom: 0.4rem'>
+          <div class='w-full' style='height: 0.4rem; background-color: dimgray; margin-top: 0.4rem; margin-bottom: 0.4rem; border-radius: 0.2rem'>
           </div>
         </div>
       </div>
@@ -114,29 +120,29 @@
 
       <!-- YOUR BAR -->
       <div v-if='!running'>
-        <div style='padding: 0 0'>
-          <div class='w-full' style='height: 0.4rem; border-width: 1px; margin-top: 0.4rem; margin-bottom: 0.4rem'>
+        <div class=' transition delay-75 duration-300 ease-in-out' style='padding: 0 0'>
+          <div class='w-full border-2' style='height: 0.4rem; margin-top: 0.4rem; margin-bottom: 0.4rem; border-radius: 0.2rem'>
           </div>
           <div class='inline-block float-right border-2' style='padding: 0.2rem 0.4rem; border-radius: 0.4rem;'>
-            <h1 class='text-black'>{{ Math.max(0, Math.min(Math.floor(time_left / 60), 10)) }}:{{ (Math.floor(time_left / 60) >= 10 ? 0 : Math.max(0, time_left % 60)).toString().padStart(2, '0') }}</h1>
+            <h1 class='text-black text-lg'>{{ Math.max(0, Math.min(Math.floor(time_left / 60), 15)) }}:{{ (Math.floor(time_left / 60) >= 15 ? 0 : Math.max(0, time_left % 60)).toString().padStart(2, '0') }}</h1>
           </div>
         </div>
       </div>
       <div v-else>
         <div v-if='color === "white"'>
-          <div style='padding: 0 0.1rem'>
-            <div class='w-full' style='height: 0.4rem; box-shadow: 0 0 0.3rem black; margin-top: 0.4rem; margin-bottom: 0.4rem'>
+          <div class=' transition delay-75 duration-300 ease-in-out' style='padding: 0 0.1rem'>
+            <div class='w-full' style='height: 0.4rem; box-shadow: 0 0 0.3rem black; margin-top: 0.4rem; margin-bottom: 0.4rem; border-radius: 0.2rem'>
             </div>
             <div class='float-right inline-block border-2' style='padding: 0.2rem 0.4rem; border-radius: 0.4rem; box-shadow: 0 0 0.3rem black; border-color: white'>
-              <h1 class=''>{{ Math.max(0, Math.min(Math.floor(time_left / 60), 10)) }}:{{ (Math.floor(time_left / 60) >= 10 ? 0 : Math.max(0, time_left % 60)).toString().padStart(2, '0') }}</h1>
+              <h1 class='text-lg'>{{ Math.max(0, Math.min(Math.floor(time_left / 60), 15)) }}:{{ (Math.floor(time_left / 60) >= 15 ? 0 : Math.max(0, time_left % 60)).toString().padStart(2, '0') }}</h1>
             </div>
           </div>
         </div>
-        <div v-else>
-          <div class='w-full' style='height: 0.4rem; background-color: dimgray; margin-top: 0.4rem; margin-bottom: 0.4rem'>
+        <div v-else class=' transition delay-75 duration-300 ease-in-out'>
+          <div class='w-full' style='height: 0.4rem; background-color: dimgray; margin-top: 0.4rem; margin-bottom: 0.4rem; border-radius: 0.2rem'>
           </div>
           <div class='float-right inline-block border-2 text-gray-200' style='padding: 0.2rem 0.4rem; border-radius: 0.4rem; background-color: dimgrey; border-color: white'>
-            <h1 class=''>{{ Math.max(0, Math.min(Math.floor(time_left / 60), 10)) }}:{{ (Math.floor(time_left / 60) >= 10 ? 0 : Math.max(0, time_left % 60)).toString().padStart(2, '0') }}</h1>
+            <h1 class='text-lg'>{{ Math.max(0, Math.min(Math.floor(time_left / 60), 15)) }}:{{ (Math.floor(time_left / 60) >= 15 ? 0 : Math.max(0, time_left % 60)).toString().padStart(2, '0') }}</h1>
           </div>
         </div>
       </div>
@@ -145,7 +151,12 @@
       <div v-if='submit_error'>
         <h1 class="text-red-600" style='margin-left: 0.2rem'>{{ submit_error.message }}</h1>
       </div>
+      <div v-else-if='alan_info'>
+        <h1 class='text-blue-600' style='margin-left: 0.2rem'>{{ alan_info }}</h1>
+      </div>
     </div>
+
+    <div class='alan-btn'></div>
   </div>
 </template>
 
@@ -206,6 +217,9 @@ export default {
       alan: null,
       alan_lock: false,
       alan_open: false,
+      alan_needs_confirm: false,
+      alan_info: '',
+      red_disp: false,
     }
   },
   async created() {
@@ -229,6 +243,11 @@ export default {
         this.submitted = 'none';
         this.submitted_val = '';
       }
+      this.alan_lock = false;
+      this.alan_open = false;
+      this.alan_needs_confirm = false;
+      this.alan_info = '';
+      this.red_disp = false;
       await new Promise(r => setTimeout(r, 3600))
       if (this.error_pending) {
         this.error = "network error";
@@ -243,10 +262,15 @@ export default {
         idx: msg.idx,
         arg: msg.move,
         fn: async (move) => {
+          this.alan_info = ""
           if (move.user_id === this.$auth.user.user_id) {
             this.running = false;
             this.time_spent = move.time_spent;
             this.opponent_running = Date.parse(move.running.toString())
+            // ???
+            // if (this.selected === this.parse(move.from_r, move.from_c)) {
+            //   // this.selected = 'none';
+            // }
           } else {
             this.opponent_running = false;
             this.opponent_time_spent = move.time_spent;
@@ -300,6 +324,13 @@ export default {
             this.block = false;
           }
           this.match_closed = true;
+          await new Promise(r => setTimeout(r, 0))
+          // try to hot speak
+          if (this.won) {
+            await this.hotSpeak("Congratulations! You won.")
+          } else {
+            await this.hotSpeak("You didn't win this time, but I'm sure you'll win in the future.")
+          }
         }
       })
     })
@@ -322,6 +353,15 @@ export default {
           }
           this.match_closed = true;
           this.sending_close = false;
+          await new Promise(r => setTimeout(r, 0))
+          // try to hot speak
+          if (this.won === "tied") {
+            await this.hotSpeak("Wow, you tied with the opponent.")
+          } else if (this.won) {
+            await this.hotSpeak("Congratulations! You won.")
+          } else {
+            await this.hotSpeak("You didn't win this time, but I'm sure you'll win in the future.")
+          }
         }
       })
     })
@@ -362,13 +402,68 @@ export default {
     this.alan = null;
     this.alan = alanBtn({
       key: 'a1c5ea949c8258cd81301b0f1d4563cb2e956eca572e1d8b807a3e2338fdd0dc/stage',
-      onCommand: (commandData) => {
+      onCommand: async (commandData) => {
         let cmd = commandData.command.split("=>")[0].trim()
         console.log(commandData.command)
         let pld = JSON.parse(commandData.command.split("=>")[1])
         switch (cmd) {
+          case ":list_threats": {
+            this.red_disp = true;
+            let locs = this.getThreats()
+            let outp = ""
+            for (let i = 0; i < locs.length; i++) {
+              if (locs[i].split(" ")[0] === "A") {
+                locs[i] = "ae " + locs[i].split(" ")[1]
+              }
+              if (i === locs.length - 1) {
+                if (locs.length > 1) {
+                  outp += "and " + locs[i] //  + "."
+                } else {
+                  outp += locs[i] //  + "."
+                }
+              } else {
+                if (locs.length > 2) {
+                  outp += locs[i] + ", "
+                } else {
+                  outp += locs[i] + " "
+                }
+              }
+              // set color to red
+              let dar = 8 - parseInt(locs[i].split(" ")[1]) + 1 - 1;
+              let dac = locs[i].split(" ")[0].charCodeAt(0) - 65 + 1 - 1;
+              document.getElementById(this.parse(dar, dac)).src = "/chess/" + this.board[dar][dac].type.split("_")[1] + "_threatened.svg"
+              document.getElementById(this.parse(dar, dac)).alt = this.board[dar][dac].type.split("_")[1] + " threatened"
+            }
+            this.$forceUpdate();
+            if (!outp) {
+              outp = "There are no threats on any of your pieces. Good job!"
+            } else {
+              if (locs.length === 1) {
+                outp = "Your piece, " + outp + " is threatened.";
+              } else {
+                outp = "Some of your pieces have threats, which are " + outp + ".";
+              }
+            }
+            console.log(outp)
+            this.alan_info = outp;
+            this.alan_info = this.alan_info.replace(" ae ", " A ")
+
+            await this.hotSpeak(outp)
+          break }
+
+          case ":confirm_risky_move": {
+            this.alan_needs_confirm = pld.needs_confirm;
+            if (this.alan_needs_confirm === 'rejected') {
+              this.alan_info = "";
+            }
+          break }
+
           case ":exact_move": {
             this.alan_lock = true;
+            if (this.selected !== 'none') {
+              console.log("unselecting")
+              await this.action(this.unparse(this.selected).r, this.unparse(this.selected).c, true)
+            }
             this.selected = 'none';
             this.selected_val = '';
             this.submitted = 'none';
@@ -376,38 +471,462 @@ export default {
             // do not allow not-turn
             if (!this.running) {
               this.alan_lock = false;
-              this.hotSpeak("it is not your turn")
+              await this.hotSpeak("it is not your turn")
               return;
             }
             if (JSON.stringify(pld.from) === JSON.stringify(pld.to)) {
               this.alan_lock = false;
-              this.hotSpeak("you cannot move to yourself")
+              await this.hotSpeak("you cannot move to yourself")
               return;
             }
-            this.alan_open = true;
             let x = pld.from.letter.charCodeAt(0) - 65 + 1;
             let y = pld.from.number
             y = 8 - y + 1;
-            if (this.board[y - 1][x - 1].type.split("_")[0] !== this.color) {
+            if (!this.board[y - 1][x - 1].id) {
               this.alan_lock = false;
-              this.hotSpeak("this isn't your piece")
+              await this.hotSpeak("no piece is here")
               return;
             }
-            this.action(y - 1, x - 1, true)
+            if (this.board[y - 1][x - 1].type.split("_")[0] !== this.color) {
+              this.alan_lock = false;
+              await this.hotSpeak("this isn't your piece")
+              return;
+            }
+
+            await this.action(y - 1, x - 1, true)
+            this.$forceUpdate()
+
+            // play the move before
+            let cur_threats = this.getThreats();
+            console.log('cur threats', cur_threats)
+            let backup = this.board[8 - pld.to.number + 1 - 1][pld.to.letter.charCodeAt(0) - 65 + 1 - 1];
+            this.board[8 - pld.to.number + 1 - 1][pld.to.letter.charCodeAt(0) - 65 + 1 - 1] = this.board[y - 1][x - 1];
+            this.board[y - 1][x - 1] = { id: null, user_id: null, type: 'none' }
+            let fut_threats = this.getThreats();
+            console.log('fut threats', fut_threats)
+            this.board[y - 1][x - 1] = this.board[8 - pld.to.number + 1 - 1][pld.to.letter.charCodeAt(0) - 65 + 1 - 1];
+            this.board[8 - pld.to.number + 1 - 1][pld.to.letter.charCodeAt(0) - 65 + 1 - 1] = backup;
+            let com_threats = cur_threats.filter(val => fut_threats.includes(val))
+            let new_threats = []
+            for (let threat of fut_threats) {
+              if (!com_threats.includes(threat)) {
+                new_threats.push(threat)
+              }
+            }
+            if (new_threats.length && this.board[8 - pld.to.number + 1 - 1][pld.to.letter.charCodeAt(0) - 65 + 1 - 1].type.split("_")[1] !== "king") {
+              this.alan_needs_confirm = true;
+              this.red_disp = true;
+              let locs = [];
+              let outp = ""
+              let includes_cur = false;
+              for (let threat of new_threats) {
+                // check if it goes-to to
+                if (threat === pld.to.letter + " " + pld.to.number.toString()) {
+                  includes_cur = true;
+                } else {
+                  locs.push(threat)
+                }
+              }
+              for (let threat of fut_threats) {
+                if (threat !== pld.to.letter + " " + pld.to.number.toString()) {
+                  // set color to red
+                  let dar = 8 - parseInt(threat.split(" ")[1]) + 1 - 1;
+                  let dac = threat.split(" ")[0].charCodeAt(0) - 65 + 1 - 1;
+                  console.log("setting red")
+                  document.getElementById(this.parse(dar, dac)).src = "/chess/" + this.board[dar][dac].type.split("_")[1] + "_threatened.svg"
+                  document.getElementById(this.parse(dar, dac)).alt = this.board[dar][dac].type.split("_")[1] + " threatened"
+                }
+              }
+              this.$forceUpdate();
+              for (let i = 0; i < locs.length; i++) {
+                if (locs[i].split(" ")[0] === "A") {
+                  locs[i] = "ae " + locs[i].split(" ")[1]
+                }
+                if (i === locs.length - 1) {
+                  if (locs.length > 1) {
+                    outp += "and " + locs[i] // + "."
+                  } else {
+                    outp += locs[i] // + "."
+                  }
+                } else {
+                  if (locs.length > 2) {
+                    outp += locs[i] + ", "
+                  } else {
+                    outp += locs[i] + " "
+                  }
+                }
+              }
+              let speak = "something went wrong. technical support is already on the problem.";
+              if (locs.length === 1) {
+                if (com_threats.length === 1) {
+                  speak = "By doing this, you are introducing threats to your piece at " + outp + ", along with" + (includes_cur ? " the piece you are moving and " : " ") + "one other threat."
+                } else if (!com_threats.length) {
+                  speak = "By doing this, you are introducing threats to your piece at " + outp + (includes_cur ? ", along with the piece you are trying to move" : ".")
+                } else {
+                  speak = "By doing this, you are introducing threats to your piece at " + outp + ", along with" + (includes_cur ? " the piece you are moving and " : " ") + com_threats.length + " other threats."
+                }
+              } else if (locs.length === 0) {
+                if (com_threats.length === 1) {
+                  speak = "By doing this, you are introducing threats to the piece you are trying to move, along with one other threat."
+                } else if (!com_threats.length) {
+                  speak = "By doing this, you are introducing threats to the piece you are trying to move."
+                } else {
+                  speak = "By doing this, you are introducing threats to the piece you are trying to move, along with " + com_threats.length + " other threats.";
+                }
+              } else {
+                if (com_threats.length === 1) {
+                  speak = "By doing this, you are introducing threats to your pieces at " + outp + ", along with" + (includes_cur ? " the piece you are moving and " : " ") + "one other threat."
+                } else if (!com_threats.length) {
+                  speak = "By doing this, you are introducing threats to your pieces at " + outp + (includes_cur ? ", along with the piece you are trying to move" : ".")
+                } else {
+                  speak = "By doing this, you are introducing threats to your pieces at " + outp + ", along with" + (includes_cur ? " the piece you are moving and " : " ") + com_threats.length + " other threats."
+                }
+              }
+              console.log(speak)
+              this.alan_info = speak + " Are you sure you want to do this?";
+              this.alan_info = this.alan_info.replace(" ae ", " A ")
+              await this.hotSpeakWithRiskyConfirm(speak)
+            }
+            let js = 0;
+            while (!this.closed && this.alan_needs_confirm) {
+              if (js % 100 === 0) {
+                console.log(this.alan_needs_confirm)
+              }
+              if (this.alan_needs_confirm === "rejected") {
+                this.alan_needs_confirm = false;
+                this.alan_lock = false;
+                return;
+              }
+              await new Promise(r => setTimeout(r, 0))
+              js++;
+            }
+
+            this.alan_open = true;
             x = pld.to.letter.charCodeAt(0) - 65 + 1;
             y = pld.to.number
             y = 8 - y + 1;
-            this.action(y - 1, x - 1, true)
+            await this.action(y - 1, x - 1, true)
             this.alan_lock = false;
           break }
 
           case ":fuzzy_move_add": {
+            this.alan_lock = true;
+            if (this.selected !== 'none') {
+              console.log("unselecting")
+              await this.action(this.unparse(this.selected).r, this.unparse(this.selected).c, true)
+            }
+            this.selected = 'none';
+            this.selected_val = '';
+            this.submitted = 'none';
+            this.submitted_val = '';
+            // do not allow not-turn
+            if (!this.running) {
+              this.alan_lock = false;
+              await this.hotSpeak("it is not your turn")
+              return;
+            }
+            // step 1: find the piece based off of positional
+            let found = false;
+            if (pld.positional === "left most") {
+              // columns left to right
+              for (let c = (this.color === 'white' ? 0 : 7); c !== (this.color === 'white' ? 8 : -1); c += (this.color === 'white' ? 1 : -1)) {
+                if (found) {
+                  break;
+                }
+                // full row
+                for (let r = 0; r < 8; r++) {
+                  if (this.board[r][c].type.split("_")[0] === this.color && this.board[r][c].type.split("_")[1] === pld.piece) {
+                    if (found) {
+                      this.alan_lock = false;
+                      await this.hotSpeak("sorry, this is ambiguous")
+                      return;
+                    }
+                    found = { r: r, c: c }
+                    // dont break
+                  }
+                }
+              }
+            } else if (pld.positional === "right most") {
+              // columns right to left
+              for (let c = (this.color === 'white' ? 7 : 0); c !== (this.color === 'white' ? -1 : 8); c += (this.color === 'white' ? -1 : 1)) {
+                if (found) {
+                  break;
+                }
+                // full row
+                for (let r = 0; r < 8; r++) {
+                  if (this.board[r][c].type.split("_")[0] === this.color && this.board[r][c].type.split("_")[1] === pld.piece) {
+                    if (found) {
+                      this.alan_lock = false;
+                      await this.hotSpeak("sorry, this is ambiguous")
+                      return;
+                    }
+                    found = { r: r, c: c }
+                    // dont break
+                  }
+                }
+              }
+            } else if (pld.positional === "bottom most" || pld.positional === "lower most") {
+              // rows bottom to top
+              for (let r = (this.color === 'white' ? 7 : 0); r !== (this.color === 'white' ? -1 : 8); r += (this.color === 'white' ? -1 : 1)) {
+                if (found) {
+                  break;
+                }
+                // full col
+                for (let c = 0; c < 8; c++) {
+                  if (this.board[r][c].type.split("_")[0] === this.color && this.board[r][c].type.split("_")[1] === pld.piece) {
+                    if (found) {
+                      this.alan_lock = false;
+                      await this.hotSpeak("sorry, this is ambiguous")
+                      return;
+                    }
+                    found = { r: r, c: c }
+                    // dont break
+                  }
+                }
+              }
+            } else if (pld.positional === "upper most" || pld.positional === "top most") {
+              for (let r = (this.color === 'white' ? 0 : 7); r !== (this.color === 'white' ? 8 : -1); r += (this.color === 'white' ? 1 : -1)) {
+                if (found) {
+                  break;
+                }
+                // full col
+                for (let c = 0; c < 8; c++) {
+                  if (this.board[r][c].type.split("_")[0] === this.color && this.board[r][c].type.split("_")[1] === pld.piece) {
+                    if (found) {
+                      this.alan_lock = false;
+                      await this.hotSpeak("sorry, this is ambiguous")
+                      return;
+                    }
+                    found = { r: r, c: c }
+                    // dont break
+                  }
+                }
+              }
+            } else {
+              // full row
+              for (let r = 0; r < 8; r++) {
+                // full col
+                for (let c = 0; c < 8; c++) {
+                  if (this.board[r][c].type.split("_")[0] === this.color && this.board[r][c].type.split("_")[1] === pld.piece) {
+                    if (found) {
+                      this.alan_lock = false;
+                      await this.hotSpeak("sorry, this is ambiguous")
+                      return;
+                    }
+                    found = { r: r, c: c }
+                    // dont break
+                  }
+                }
+                // no breaking here also
+              }
+            }
+
+            if (!found) {
+              this.alan_lock = false;
+              await this.hotSpeak("this piece does not exist")
+              return;
+            }
+
+            // step 2: get direction offset
+            let r_ofs = 0, c_ofs = 0;
+            if (pld.direction === "up") {
+              r_ofs -= pld.amount;
+            } else if (pld.direction === "down") {
+              r_ofs += pld.amount;
+            } else if (pld.direction === "left") {
+              c_ofs -= pld.amount;
+            } else if (pld.direction === "right") {
+              c_ofs += pld.amount;
+            }
+            if (pld.direction_add === "up") {
+              r_ofs -= pld.amount;
+            } else if (pld.direction_add === "down") {
+              r_ofs += pld.amount;
+            } else if (pld.direction_add === "left") {
+              c_ofs -= pld.amount;
+            } else if (pld.direction_add === "right") {
+              c_ofs += pld.amount;
+            }
+
+            if (pld.piece === "knight") {
+              if (pld.direction === "up" && pld.direction_add === "left") {
+                r_ofs = -2;
+                c_ofs = -1;
+              } else if (pld.direction === "up" && pld.direction_add === "right") {
+                r_ofs = -2;
+                c_ofs = 1;
+              } else if (pld.direction === "right" && pld.direction_add === "up") {
+                c_ofs = 2;
+                r_ofs = -1;
+              } else if (pld.direction === "right" && pld.direction_add === "down") {
+                c_ofs = 2;
+                r_ofs = 1;
+              } else if (pld.direction === "down" && pld.direction_add === "right") {
+                r_ofs = 2;
+                c_ofs = 1;
+              } else if (pld.direction === "down" && pld.direction_add === "left") {
+                r_ofs = 2;
+                c_ofs = -1;
+              } else if (pld.direction === "left" && pld.direction_add === "down") {
+                c_ofs = -2;
+                r_ofs = 1;
+              } else if (pld.direction === "left" && pld.direction_add === "up") {
+                c_ofs = -2;
+                r_ofs = -1;
+              } else {
+                r_ofs = 0;
+                c_ofs = 0;
+              }
+            }
+
+            if (r_ofs === 0 && c_ofs === 0) {
+              // no direction caught
+              this.alan_lock = false;
+              await this.hotSpeak("sorry, i do not understand")
+              return;
+            }
+
+            if (this.color !== 'white') {
+              r_ofs = -r_ofs;
+              c_ofs = -c_ofs;
+            }
+
+            if (found.r + r_ofs < 0 || found.r + r_ofs >= 8 || found.c + c_ofs < 0 || found.c + c_ofs >= 8) {
+              this.alan_lock = false;
+              await this.hotSpeak("you are trying to move out of the board")
+              return;
+            }
+
+            await this.action(found.r, found.c, true)
+            this.$forceUpdate()
+
+            let cur_threats = this.getThreats();
+            console.log('cur threats', cur_threats)
+            let backup = this.board[found.r + r_ofs][found.c + c_ofs];
+            this.board[found.r + r_ofs][found.c + c_ofs] = this.board[found.r][found.c];
+            this.board[found.r][found.c] = { id: null, user_id: null, type: 'none' }
+            let fut_threats = this.getThreats();
+            console.log('fut threats', fut_threats)
+            this.board[found.r][found.c] = this.board[found.r + r_ofs][found.c + c_ofs];
+            this.board[found.r + r_ofs][found.c + c_ofs] = backup;
+            let com_threats = cur_threats.filter(val => fut_threats.includes(val))
+            let new_threats = []
+            for (let threat of fut_threats) {
+              if (!com_threats.includes(threat)) {
+                new_threats.push(threat)
+              }
+            }
+            if (new_threats.length && this.board[found.r + r_ofs][found.c + c_ofs].type.split("_")[1] !== "king") {
+              this.alan_needs_confirm = true;
+              this.red_disp = true;
+              let locs = [];
+              let outp = ""
+              let includes_cur = false;
+              for (let threat of new_threats) {
+                // check if it goes-to `to'
+                if (threat === (String.fromCharCode(("A").charCodeAt(0) + found.c + c_ofs)) + " " + (8 - (found.r + r_ofs))) {
+                  includes_cur = true;
+                } else {
+                  locs.push(threat)
+                }
+              }
+              for (let threat of fut_threats) {
+                if (threat !== (String.fromCharCode(("A").charCodeAt(0) + found.c + c_ofs)) + " " + (8 - (found.r + r_ofs))) {
+                  // set color to red
+                  let dar = 8 - parseInt(threat.split(" ")[1]) + 1 - 1;
+                  let dac = threat.split(" ")[0].charCodeAt(0) - 65 + 1 - 1;
+                  console.log("setting red")
+                  document.getElementById(this.parse(dar, dac)).src = "/chess/" + this.board[dar][dac].type.split("_")[1] + "_threatened.svg"
+                  document.getElementById(this.parse(dar, dac)).alt = this.board[dar][dac].type.split("_")[1] + " threatened"
+                }
+              }
+              if (includes_cur) {
+
+              }
+              this.$forceUpdate()
+              for (let i = 0; i < locs.length; i++) {
+                if (locs[i].split(" ")[0] === "A") {
+                  locs[i] = "ae " + locs[i].split(" ")[1]
+                }
+                if (i === locs.length - 1) {
+                  if (locs.length > 1) {
+                    outp += "and " + locs[i] // + "."
+                  } else {
+                    outp += locs[i] // + "."
+                  }
+                } else {
+                  if (locs.length > 2) {
+                    outp += locs[i] + ", "
+                  } else {
+                    outp += locs[i] + " "
+                  }
+                }
+              }
+              let speak = "something went wrong. technical support is already on the problem.";
+              if (locs.length === 1) {
+                if (com_threats.length === 1) {
+                  console.log("1")
+                  speak = "By doing this, you are introducing threats to your piece at " + outp + ", along with" + (includes_cur ? " the piece you are moving and " : " ") + "one other threat."
+                } else if (!com_threats.length) {
+                  console.log("2")
+                  speak = "By doing this, you are introducing threats to your piece at " + outp + (includes_cur ? ", along with the piece you are trying to move" : ".")
+                } else {
+                  console.log("3")
+                  speak = "By doing this, you are introducing threats to your piece at " + outp + ", along with " + (includes_cur ? " the piece you are moving and " : " ") + com_threats.length + " other threats."
+                }
+              } else if (locs.length === 0) {
+                if (com_threats.length === 1) {
+                  console.log("4")
+                  speak = "By doing this, you are introducing threats to the piece you are trying to move, along with one other threat."
+                } else if (!com_threats.length) {
+                  console.log("5")
+                  speak = "By doing this, you are introducing threats to the piece you are trying to move."
+                } else {
+                  console.log("6")
+                  speak = "By doing this, you are introducing threats to the piece you are trying to move, along with " + com_threats.length + " other threats.";
+                }
+              } else {
+                if (com_threats.length === 1) {
+                  console.log("7")
+                  speak = "By doing this, you are introducing threats to your pieces at " + outp + ", along with" + (includes_cur ? " the piece you are moving and " : " ") + "one other threat."
+                } else if (!com_threats.length) {
+                  console.log("8")
+                  speak = "By doing this, you are introducing threats to your pieces at " + outp + (includes_cur ? ", along with the piece you are trying to move" : ".")
+                } else {
+                  console.log("9")
+                  speak = "By doing this, you are introducing threats to your pieces at " + outp + ", along with " + (includes_cur ? " the piece you are moving and " : " ") + com_threats.length + " other threats."
+                }
+              }
+              console.log(speak)
+              this.alan_info = speak + " Are you sure you want to do this?";
+              this.alan_info = this.alan_info.replace(" ae ", " A ")
+              await this.hotSpeakWithRiskyConfirm(speak)
+            }
+            let js = 0;
+            while (!this.closed && this.alan_needs_confirm) {
+              if (js % 100 === 0) {
+                console.log(this.alan_needs_confirm)
+              }
+              if (this.alan_needs_confirm === "rejected") {
+                this.alan_needs_confirm = false;
+                this.alan_lock = false;
+                return;
+              }
+              await new Promise(r => setTimeout(r, 0))
+              js++;
+            }
+
+            this.alan_open = true;
+            await this.action(found.r + r_ofs, found.c + c_ofs, true)
+
+            this.alan_lock = false;
           break }
         }
       },
       onConnectionStatus: (status) => {
         console.log('==============', status)
       },
+      rootEl: document.getElementById('alan-btn')
     });
 
     // p100 poller
@@ -435,12 +954,12 @@ export default {
 
         let time_spent_secs = Math.floor(time_spent / 1_000_000) // seconds
         let opponent_time_spent_secs = Math.floor(opponent_time_spent / 1_000_000)
-        this.time_left = 10 * 60 - time_spent_secs;
-        this.opponent_time_left = 10 * 60 - opponent_time_spent_secs;
+        this.time_left = 15 * 60 - time_spent_secs;
+        this.opponent_time_left = 15 * 60 - opponent_time_spent_secs;
 
         let time_spent_mins = Math.floor(time_spent_secs / 60); // minutes
         let opponent_time_spent_mins = Math.floor(opponent_time_spent_secs / 60);
-        if (this.got_state && time_spent_mins >= 10 || opponent_time_spent_mins >= 10) {
+        if (this.got_state && time_spent_mins >= 15 || opponent_time_spent_mins >= 15) {
           if (Math.floor(Math.abs(time_spent - opponent_time_spent) / 1000) < 1) {
             this.sending_close = "both"
           } else if (time_spent > opponent_time_spent) {
@@ -530,10 +1049,10 @@ export default {
           })
           .receive('error', async (msg) => {
             try {
-              // TODO if match closed, redirect to match finish page (http instead of sockets now)
               console.log('error', msg)
               if (msg.reason === codes.closed) {
-                await this.$router.replace('/summary/' + this.match_id)
+                // TODO: imp summary page
+                await this.$router.replace('/')
               }
               await this.showError(msg.reason)
             } catch {
@@ -617,9 +1136,104 @@ export default {
         }
       })
     },
+    async hotSpeakWithRiskyConfirm(message) {
+      this.alan.callProjectApi("hotSpeakWithRiskyConfirm", { message: message }, (error, result) => {
+        if (error) {
+          console.log('error', error)
+        }
+      })
+    },
+    getThreats() {
+      let ret = [];
+      // find pieces
+      for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+          if (this.board[i][j].type.split("_")[0] === this.color) {
+            // found a piece
+            // go from piece to every possible direction
+            // if hit same color -> disengage
+            // else hit opponent color -> mark
+
+            // slot checking
+            let slots = [
+              { r: i - 1, c: j - 1, is_a: ["king", "pawn"] },
+              { r: i - 1, c: j    , is_a: ["king"] },
+              { r: i - 1, c: j + 1, is_a: ["king", "pawn"] },
+              { r: i    , c: j + 1, is_a: ["king"] },
+              { r: i + 1, c: j + 1, is_a: ["king", "pawn"] },
+              { r: i + 1, c: j    , is_a: ["king"] },
+              { r: i + 1, c: j - 1, is_a: ["king", "pawn"] },
+              { r: i    , c: j - 1, is_a: ["king"] },
+              { r: i - 2, c: j - 1, is_a: ["knight"] },
+              { r: i - 2, c: j + 1, is_a: ["knight"] },
+              { r: i - 1, c: j + 2, is_a: ["knight"] },
+              { r: i + 1, c: j + 2, is_a: ["knight"] },
+              { r: i + 2, c: j - 1, is_a: ["knight"] },
+              { r: i + 2, c: j + 1, is_a: ["knight"] },
+              { r: i - 1, c: j - 2, is_a: ["knight"] },
+              { r: i + 1, c: j - 2, is_a: ["knight"] },
+            ]
+            for (let slot of slots) {
+              if (slot.r < 0 || slot.r >= 8 || slot.c < 0 || slot.c >= 8) {
+                continue;
+              }
+              if (this.board[slot.r][slot.c].user_id && this.board[slot.r][slot.c].user_id !== this.$auth.user.user_id) {
+                if (slot.is_a.includes(this.board[slot.r][slot.c].type.split("_")[1])) {
+                  ret.push(String.fromCharCode(("A").charCodeAt(0) + j) + " " + (8 - i).toString())
+                }
+              }
+            }
+
+            // inf checking
+            let dirs = [
+              { dr: -1, dc: -1, is_a: ["queen", "bishop"] },
+              { dr: -1, dc:  0, is_a: ["queen", "rook"] },
+              { dr: -1, dc:  1, is_a: ["queen", "bishop"] },
+              { dr:  0, dc:  1, is_a: ["queen", "rook"] },
+              { dr:  1, dc:  1, is_a: ["queen", "bishop"] },
+              { dr:  1, dc:  0, is_a: ["queen", "rook"] },
+              { dr:  1, dc: -1, is_a: ["queen", "bishop"] },
+              { dr:  0, dc: -1, is_a: ["queen", "rook"] },
+            ]
+            for (let dir of dirs) {
+              let r = i + dir.dr, c = j + dir.dc;
+              while (!(r < 0 || r >= 8 || c < 0 || c >= 8)) {
+                if (this.board[r][c].user_id) {
+                  if (this.board[r][c].user_id !== this.$auth.user.user_id && dir.is_a.includes(this.board[r][c].type.split("_")[1])) {
+                    ret.push(String.fromCharCode(("A").charCodeAt(0) + j) + " " + (8 - i).toString())
+                  }
+                  break;
+                }
+                r += dir.dr;
+                c += dir.dc;
+              }
+            }
+          }
+        }
+      }
+      console.log([...new Set(ret)])
+
+      return [...new Set(ret)];
+    },
     async action(i, j, by_alan = false) {
-      if (this.block || (this.alan_lock && !by_alan) || this.closed || (this.selected === 'none' && this.board[i][j].type.split("_")[0] !== this.color)) {
+      if (this.block || this.closed || (this.selected === 'none' && this.board[i][j].type.split("_")[0] !== this.color)) {
         return;
+      }
+      if (this.alan_lock && !by_alan) {
+        await this.showSubmitError("Alan is still waiting for your response.")
+        return;
+      }
+      if (this.red_disp) {
+        // clear it
+        for (let i = 0; i < 8; i++) {
+          for (let j = 0; j < 8; j++) {
+            if (document.getElementById(this.parse(i, j)) && document.getElementById(this.parse(i, j)).alt.split(" ")[1] === "threatened") {
+              document.getElementById(this.parse(i, j)).src = "/chess/" + this.color + "_" + document.getElementById(this.parse(i, j)).alt.split(" ")[0] + ".svg";
+              document.getElementById(this.parse(i, j)).alt = this.color + " " + document.getElementById(this.parse(i, j)).alt.split(" ")[0];
+            }
+          }
+        }
+        this.red_disp = false;
       }
       if (this.selected === 'none') {
         if (this.board[i][j].id === null) {
@@ -706,6 +1320,8 @@ export default {
       delete this.socket;
     }
     if (this.alan) {
+      this.alan.deactivate()
+      this.alan.stop();
       this.alan.remove();
       delete this.alan;
     }
