@@ -71,6 +71,7 @@ export default {
         endpoints: {
           login: { url: 'https://d3ryjut3q7flbd.cloudfront.net/api/users/login', method: 'post' },
           user: { url: 'https://d3ryjut3q7flbd.cloudfront.net/api/user', method: 'get' },
+          logout: false,
         },
       },
     },
