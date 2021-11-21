@@ -64,20 +64,6 @@
           </div>
         </div>
       </div>
-
-      <div v-for="m in matches_result" class="grid gap-2 bg-gray-300" style="grid-template-columns: 1fr 1fr">
-        <div v-if="m.elo_delta > 0">
-          +{{ m.elo_delta }} Elo
-        </div>
-        <div v-else-if="m.elo_delta < 0">
-          {{ m.elo_delta }} Elo
-        </div>
-        <div v-else>
-          +{{ m.elo_delta }} Elo
-        </div>
-      </div>
-    </div>
-
     <div class='alan-btn'></div>
   </div>
 </template>
@@ -445,9 +431,7 @@ export default {
             }
             // TODO rename to something nicer (matches_list ??)
             this.matches_result = msg.matches.list;
-            if (this.matched) {
-              this.matches_result.shift();
-            }
+            this.matches_result.shift();
             this.matches_idx = msg.idx
             this.matches_got_state = true;
           })
